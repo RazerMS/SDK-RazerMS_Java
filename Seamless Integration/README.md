@@ -19,6 +19,6 @@ Any amendment by your end is at your own risk.
 
 Changelog
 ----------
-1. 2018-04-20 - v1.0.0 - Initial Release
+1. 2018-05-2 - v1.0.0 - Initial Release
 
 
