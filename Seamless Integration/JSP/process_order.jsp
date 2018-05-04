@@ -24,6 +24,8 @@
  */
 --%>
 <%
+    String your_process_status=(String)request.getAttribute("your_process_status");
+    if(your_process_status.equals("true")){
     molpay data = new molpay(); 
     data.setMpsorderid(Integer.toString(data.getRandomOrderId())); // get random order id 
     data.setMpsvcode(data.hash(data.getMpsamount() + data.getMpsmerchantid() + data.getMpsorderid() + data.getVkey()));
@@ -48,6 +50,9 @@
     innerObject.addProperty("mpsreturnurl", data.getMpsreturnurl());
     innerObject.addProperty("mpsapiversion", data.getMpsapiversion());
     out.println(innerObject);
+    }else if (your_process_status.equals("false")){
+    out.println("error");
+    }
 %>
 <%@page import="com.google.gson.JsonObject"%>
 <%@page import="molpay.molpay" %>

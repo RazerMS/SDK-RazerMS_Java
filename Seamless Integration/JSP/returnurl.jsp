@@ -37,6 +37,7 @@
 <%@page import="javax.net.ssl.X509TrustManager"%>
 <%@page import="javax.net.ssl.TrustManager"%>
 
+
 <%!
     /***********************************************************
     * This is the response page
@@ -113,7 +114,14 @@
 
         if(status.equals("00") || status.equals("22")){
            out.println(status + "<br>" + "Transaction was successfully made");
-           // write your script here .....
+           out.println("<br>");
+      %>
+      <a href="<% out.println(data.q_by_tid(amount, tranID)); %>">Test Requery q_by_tid</a><br>
+      <a href="<% out.println(data.q_by_oid(amount, orderid)); %>">Test Requery q_by_oid</a><br>
+      <a href="<% out.println(data.q_oid_batch(orderid)); %>">Test Requery q_oid_batch</a><br>
+      <a href="<% out.println(data.q_by_oids(orderid + "|" + orderid, "|")); %>">Test Requery q_by_oids</a><br>
+      <a href="<% out.println(data.q_by_tids(tranID + "|" + tranID)); %>">Test Requery q_by_tids</a><br>      
+      <%// write your script here .....
            // if ( check_cart_amt($orderid, $amount) ) { }
         }
         else {
