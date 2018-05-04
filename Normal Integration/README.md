@@ -10,6 +10,7 @@ Version 1.0. (Initial Release)
 ### Installation
 #### Via File Explorer & NetBeans IDE
 
+##### Recommended IDE 
 > Product Version: NetBeans IDE 8.2 (Build 201609300101)
 > 
 > Java: 1.8.0_161
@@ -28,13 +29,23 @@ or
 
 ### Usage
 
+> Change Development or Production ID 
+
+
+```JAVA
+final String vkey = "960f54ac03b2e0e7b36aed4d4e46ac9e"; // Verify Keys (Replace with your verify key)
+final String merchantid = "SB_supportmolpay"; // Merchant ID (Replace with your merchant id)
+final String secretkey = "27ced940910628c8cd2800b71e06b099"; // Secret keys (Replace with your secret keys) 
+```
 
 > Import the SDK on JSP file
+
 
 ```JSP
 <%@page import="molpay.controller"%>
 <%@page import="molpay.molpay"%>
 ```
+
 
 > Configuration page can set either sandbox or production on **index.jsp**
 
@@ -48,9 +59,8 @@ final String demo_type = "sandbox"; // or production
 ```JAVA
 controller data = new controller();
 ```
-> Set the values received from MOLPay's payment page 
-```JAVA
-data.setNbcb(request.getParameter("nbcb"));
+> Set the values received from MOLPay's payment page for Return URL
+```JSP
 data.setSkey(request.getParameter("skey"));
 data.setTranID(request.getParameter("tranID"));
 data.setDomain(request.getParameter("domain"));
@@ -66,12 +76,14 @@ data.setChannel(request.getParameter("channel"));
 data.setExtraP(request.getParameter("extraP")); 
 ```
 > Create securitycert object in order to sent IPN for return URL
-```JAVA
+```JSP
 molpay securitycert = new molpay();
 ```
-> IPN(Instant Payment Notification)
+> IPN(Instant Payment Notification) for Return URL
 
-```JAVA
+
+
+```JSP
 /***********************************************************
 * IPN Snippet code is the enhancement required
 * by merchant to add into their return script in order to
@@ -86,14 +98,50 @@ out.println("<br>" + "\nMerchant have sent IPN");
 out.println(urlP);
 ```
 
+> IPN(Instant Payment Notification) for Notification & Callback URL
+
+```JSP
+controller data = new controller();
+```
+> Set the values received from MOLPay's payment page for Notification & Callback URL
+```JSP
+data.setSkey(request.getParameter("nbcb")); 
+data.setSkey(request.getParameter("skey"));
+data.setTranID(request.getParameter("tranID"));
+data.setDomain(request.getParameter("domain"));
+data.setStatus(request.getParameter("status"));
+data.setAmount(request.getParameter("amount"));
+data.setCurrency(request.getParameter("currency"));
+data.setPaydate(request.getParameter("paydate"));
+data.setOrderid(request.getParameter("orderid"));
+data.setAppcode(request.getParameter("appcode"));
+data.setError_code(request.getParameter("error_code"));
+data.setError_desc(request.getParameter("error_desc"));
+data.setChannel(request.getParameter("channel"));
+data.setExtraP(request.getParameter("extraP")); 
+```
+
+```JSP
+/***********************************************************
+* IPN Snippet code is the enhancement required
+* by merchant to add into their return script in order to
+* implement backend acknowledge method for IPN
+************************************************************/
+
+molpay securitycert = new molpay();
+out.println("<br>" + "\nMerchant have sent IPN");
+String urlP = securitycert.IPN_Notification(data.getDemo_type(), data.getNbcb(), data.getSkey(), data.getTranID(), data.getDomain(), data.getStatus(), data.getAmount(), data.getCurrency(), data.getPaydate(), data.getOrderid(), data.getAppcode(), data.getError_code(), data.getError_desc(), data.getChannel(), data.getExtraP());
+        out.println(urlP);
+```
+
 > Additional object must be set when using IPN
 
 ```JAVA 
-String urlParameters = "treq=1"; // Additional parameter for IPN. Value always set to 1. 
+String urlParameters = "treq=1"; // Default. Additional parameter for IPN. Value always set to 1. 
 ```
 
 > To generate key1, method generateKeys() need to invoked with parameters. Refer Class MOLPay method summary for details.
-```JAVA
+```JSP
 /***********************************************************
 * Generate key1. References class method
 ************************************************************/
@@ -125,7 +173,7 @@ out.println(urlP);
 
 > E.G Return URL
 
-```JAVA
+```JSP
 <% if (!key1.equals( data.getSkey() )) data.setStatus("-1"); /* Invalid transaction */ %>
       
 
@@ -148,7 +196,7 @@ out.println(urlP);
 
 > E.G Callback & Notification URL
 
-```JAVA
+```JSP
 <% if (!key1.equals( data.getSkey() )) data.setStatus("-1"); /* Invalid transaction */ %>
 
        <% if(data.getStatus().equals("00")){
