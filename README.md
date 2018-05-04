@@ -2,6 +2,7 @@
 # MOLPay Java SDK and Seamless Integration
 
 Version 1.0.0 (Normal Version)
+
 Version 1.0.1 (Seamless Version)
 
 
