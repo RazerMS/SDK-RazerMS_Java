@@ -3,9 +3,12 @@ package molpay;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.math.BigInteger;
+import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -14,7 +17,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.servlet.RequestDispatcher;
- 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -44,29 +46,242 @@ public class molpay extends HttpServlet {
     public static String mpscancelurl = "http://localhost:8080/SeamlessIntegration/cancel_order.jsp";
     public static String mpsreturnurl = "http://localhost:8080/SeamlessIntegration/returnurl.jsp";
     public static String mpsapiversion = "3.17";
+    public static String your_process_status = "false"; 
+    
     
     public molpay(){
         // Silences is golden
     }
-
+ 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {     
-            // read form fields
-            status = true;
-            mpschannel = request.getParameter("payment_options");
-            mpsamount = request.getParameter("total_amount");
-            
-            mpsbill_name = request.getParameter("billingFirstName") + " " + request.getParameter("billingLastName");
-            mpsbill_email = request.getParameter("billingEmail");
-            mpsbill_mobile = request.getParameter("billingMobile");
-            mpsbill_desc = request.getParameter("billingAddress");
-            mpscurrency = request.getParameter("currency");
-            mpstimer = Integer.parseInt(request.getParameter("molpaytimer"));
-            
-            String nextJSP = "/process_order.jsp";
-            RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(nextJSP);
-            dispatcher.forward(request,response);
+        // read form fields
+        status = true;
+        mpschannel = request.getParameter("payment_options");
+        mpsamount = request.getParameter("total_amount");
+        mpsbill_name = request.getParameter("billingFirstName") + " " + request.getParameter("billingLastName");
+        mpsbill_email = request.getParameter("billingEmail");
+        mpsbill_mobile = request.getParameter("billingMobile");
+        mpsbill_desc = request.getParameter("billingAddress");
+        mpscurrency = request.getParameter("currency");
+        request.setAttribute("your_process_status", "true");
 
+        String nextJSP = "/process_order.jsp";
+        RequestDispatcher dispatcher = getServletContext().getRequestDispatcher(nextJSP);
+        dispatcher.forward(request,response);
     }
+
+    public void doGet(HttpServletRequest request,HttpServletResponse response) throws ServletException, IOException  {
+        String paramater =  request.getParameter("requery"); 
+        String amount =  request.getParameter("amount");
+        String tranID =  request.getParameter("tranID");
+        String orderid =  request.getParameter("orderid"); 
+
+        PrintWriter out = response.getWriter();
+        // getRequery() method is used to retrieve the selection made by the user
+        switch (paramater.toLowerCase()) {
+            case "q_by_tid":
+                getRequery(q_by_tid(amount, tranID), response);
+                break;
+            case "q_by_oid":
+                getRequery(q_by_oid(amount, orderid), response);
+                break;
+            case "q_oid_batch":
+                getRequery(q_oid_batch(orderid), response);
+                break;
+            case "q_by_oids":
+                getRequery(q_by_oids(orderid + "|" + orderid, "|"), response);
+                break;
+            case "q_by_tids":
+                getRequery(q_by_tids(tranID + "|" + tranID), response);
+                break;
+            default:
+                out.println("error");
+                break;
+        }
+    }
+
+    public static void getRequery(String ourl, HttpServletResponse response) throws MalformedURLException, IOException{
+        URL url = new URL(ourl);
+        PrintWriter out= response.getWriter();
+
+        URLConnection con = url.openConnection();
+        InputStream is = con.getInputStream();
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        String line = null;
+
+        while ((line = br.readLine()) != null) {
+            out.println(line);
+        }
+    }
+    
+    public static String q_by_tid(String amount, String txID){
+
+        String skey = hash(txID + mpsmerchantid + vkey + amount);
+        String url = "";
+        String type = "0";
+        
+        // 0 = plain text result (default)
+        // 1 = result via POST method
+        
+        String blocks[] = {
+            amount, txID, mpsmerchantid, skey, url, type
+        };
+        
+        ArrayList<String> parameter = new ArrayList<String>();
+        parameter.add("amount");
+	parameter.add("txID");
+	parameter.add("domain");
+	parameter.add("skey");
+        parameter.add("url");
+        parameter.add("type");
+        
+        String ourl = "https://api.molpay.com/MOLPay/API/gate-query/index.php";
+        String urlParameters = "?"; 
+        urlParameters = urlParameters.concat("" + parameter.get(0) + "=" + blocks[0]);
+        for (int i = 1; i < parameter.size() ; i++) {
+            urlParameters = urlParameters.concat("&" + parameter.get(i) + "=" + blocks[i]);
+        }
+        
+        urlParameters = ourl.concat(urlParameters);
+        
+        return urlParameters;
+    }
+
+    public static String q_by_oid(String amount, String oID){
+        
+        String skey = hash(oID + mpsmerchantid + vkey + amount);
+        String url = "";
+        String type = "0";
+        String req4token = "0";
+        
+        
+        String blocks[] = {
+            amount, oID, mpsmerchantid, skey, url, type, req4token
+        };
+        
+        ArrayList<String> parameter = new ArrayList<String>();
+        parameter.add("amount");
+	parameter.add("oID");
+	parameter.add("domain");
+	parameter.add("skey");
+        parameter.add("url");
+	parameter.add("type");
+        parameter.add("req4token");
+        
+        String ourl = "https://api.molpay.com/MOLPay/query/q_by_oid.php";
+        String urlParameters = "?"; 
+        urlParameters = urlParameters.concat("" + parameter.get(0) + "=" + blocks[0]);
+        for (int i = 1; i < parameter.size() ; i++) {
+            urlParameters = urlParameters.concat("&" + parameter.get(i) + "=" + blocks[i]);
+        }
+        
+        urlParameters = ourl.concat(urlParameters);
+        
+        return urlParameters;
+    }
+    
+    public static String q_oid_batch(String oID){
+        
+        String skey = hash(oID + mpsmerchantid + vkey);
+        String url = "";
+        String type = "0";
+        String format = "0";
+        String req4token = "0";
+        
+        String blocks[] = {
+            oID, mpsmerchantid, skey, url, type, format, req4token
+        };
+        
+        ArrayList<String> parameter = new ArrayList<String>();
+        parameter.add("oID");
+	parameter.add("domain");
+	parameter.add("skey");
+	parameter.add("url");
+        parameter.add("type");
+	parameter.add("format");
+	parameter.add("req4token");
+        
+        String ourl = "https://api.molpay.com/MOLPay/query/q_oid_batch.php";
+        String urlParameters = "?"; 
+        urlParameters = urlParameters.concat("" + parameter.get(0) + "=" + blocks[0]);
+        for (int i = 1; i < parameter.size() ; i++) {
+            urlParameters = urlParameters.concat("&" + parameter.get(i) + "=" + blocks[i]);
+        }
+        
+        urlParameters = ourl.concat(urlParameters);
+        
+        return urlParameters;
+    }
+    
+    public static String q_by_oids(String oIDs, String delimiter){
+        
+        String skey = hash(mpsmerchantid + oIDs + vkey);
+        String url = "";
+        String type = "0";
+        String format = "0";
+        String req4token = "0";
+        
+        String blocks[] = {
+            oIDs, delimiter, mpsmerchantid, skey, url, type, format, req4token
+        };
+        
+        ArrayList<String> parameter = new ArrayList<String>();
+        parameter.add("oIDs");
+	parameter.add("delimiter");
+	parameter.add("domain");
+	parameter.add("skey");
+        parameter.add("url");
+	parameter.add("type");
+	parameter.add("format");
+        parameter.add("req4token");
+        
+        String ourl = "https://api.molpay.com/MOLPay/query/q_by_oids.php";
+        String urlParameters = "?"; 
+        urlParameters = urlParameters.concat("" + parameter.get(0) + "=" + blocks[0]);
+        for (int i = 1; i < parameter.size() ; i++) {
+            urlParameters = urlParameters.concat("&" + parameter.get(i) + "=" + blocks[i]);
+        }
+        
+        urlParameters = ourl.concat(urlParameters);
+        
+        return urlParameters;
+    }
+    
+    public static String q_by_tids(String tIDs){
+
+        String skey = hash(mpsmerchantid + tIDs + vkey);
+        String url = "";
+        String type = "0";
+        String format = "0";
+        String req4token = "0";
+        
+        String blocks[] = {
+            tIDs, mpsmerchantid, skey, url, type, format, req4token
+        };
+        
+        ArrayList<String> parameter = new ArrayList<String>();
+        parameter.add("tIDs");
+	parameter.add("domain");
+	parameter.add("skey");
+	parameter.add("url");
+        parameter.add("type");
+	parameter.add("format");
+	parameter.add("req4token");
+        
+        String ourl = "https://api.molpay.com/MOLPay/query/q_by_tids.php";
+        String urlParameters = "?"; 
+        urlParameters = urlParameters.concat("" + parameter.get(0) + "=" + blocks[0]);
+        for (int i = 1; i < parameter.size() ; i++) {
+            urlParameters = urlParameters.concat("&" + parameter.get(i) + "=" + blocks[i]);
+        }
+        
+        urlParameters = ourl.concat(urlParameters);
+        
+        return urlParameters;
+    }
+    
+    
 
     public static int getRandomOrderId(){
         int result = (int)(Math.random()*10000);
@@ -81,19 +296,6 @@ public class molpay extends HttpServlet {
      * @return MD5 Hashing
      * @throws java.security.NoSuchAlgorithmException 
     ************************************************************/
-    public static String md5(String input) throws NoSuchAlgorithmException {
-    String result = input;
-    if(input != null) {
-        MessageDigest md = MessageDigest.getInstance("MD5"); //or "SHA-1"
-        md.update(input.getBytes());
-        BigInteger hash = new BigInteger(1, md.digest());
-        result = hash.toString(16);
-        while(result.length() < 32) { //40 for SHA-1
-            result = "0" + result;
-        }
-    }
-    return result;
-    }
     
     public static String hash(String input) {
         String str = input;
@@ -110,33 +312,6 @@ public class molpay extends HttpServlet {
             throw new RuntimeException(ex);
         }
     }
-    
-    /**
-     * @param inputString
-     * @return
-     * @throws NoSuchAlgorithmException
-     */
-    public static String getMD5Hex(final String inputString) throws NoSuchAlgorithmException {
-
-    MessageDigest md = MessageDigest.getInstance("MD5");
-    md.update(inputString.getBytes());
-
-    byte[] digest = md.digest();
-
-    return convertByteToHex(digest);
-    }
-
-    private static String convertByteToHex(byte[] byteData) {
-
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < byteData.length; i++
-    ) {
-        sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
-    }
-    
-    return sb.toString();
-    }
-    
     
     
     /***********************************************************
@@ -168,8 +343,8 @@ public class molpay extends HttpServlet {
 
     public static String generateKeys(String tranID, String orderid, String status, String domain, String amount, String currency, String paydate, String appcode, String vkey ) throws NoSuchAlgorithmException {
         // on response payment page
-        String key0 = getMD5Hex(tranID + orderid + status + domain + amount + currency);
-        String key1 = getMD5Hex(paydate + domain + key0 + appcode + vkey);
+        String key0 = hash(tranID + orderid + status + domain + amount + currency);
+        String key1 = hash(paydate + domain + key0 + appcode + vkey);
         return key1;
     }
     
@@ -521,7 +696,10 @@ public class molpay extends HttpServlet {
         this.mpsapiversion = mpsapiversion;
     }
 
-    
+    public static String getYour_process_status() {
+        return your_process_status;
+    }
+        
     
 }
  
