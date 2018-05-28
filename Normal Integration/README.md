@@ -33,9 +33,9 @@ or
 
 
 ```JAVA
-final String vkey = "960f54ac03b2e0e7b36aed4d4e46ac9e"; // Verify Keys (Replace with your verify key)
+final String vkey = "xxx"; // Verify Keys (Replace with your verify key)
 final String merchantid = "SB_supportmolpay"; // Merchant ID (Replace with your merchant id)
-final String secretkey = "27ced940910628c8cd2800b71e06b099"; // Secret keys (Replace with your secret keys) 
+final String secretkey = "xxx"; // Secret keys (Replace with your secret keys) 
 ```
 
 > Import the SDK on JSP file
